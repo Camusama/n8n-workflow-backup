@@ -1,0 +1,646 @@
+{
+  "createdAt": "2025-07-30T10:13:46.708Z",
+  "updatedAt": "2025-07-31T06:35:24.000Z",
+  "id": "q9k1rSRC7yWCBI59",
+  "name": "reddit-n8n-notion",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        960,
+        448
+      ],
+      "id": "a85d0f82-2496-4bc7-b7ca-bccd3aa3daee",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7ab94aa0-86e6-422b-9c3c-58e14f256f0f",
+              "leftValue": "={{ $('Search for a post').item.json.ups }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "2742a905-1b2c-45d0-ac8c-551d52f8e61f",
+              "leftValue": "={{ $('Search for a post').item.json.selftext }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "32195ba3-db7c-4ff6-90ee-b4e1b6d95ff9",
+              "leftValue": "={{ DateTime.fromSeconds($('Search for a post').item.json.created_utc).toISO() }}",
+              "rightValue": "={{ $today.minus({days: 365*2}).toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "afterOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2256,
+        448
+      ],
+      "id": "c62b0787-cb15-4f0a-9881-224e967df438",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### Reddit搜索结果深度分析与商业洞察\n\n#### 1. 角色扮演 (Role) & 任务背景 (Context)\n\n您将扮演一名专业的 “Reddit 商业机会分析师”。您的任务是基于给定的 Reddit 搜索数据，为用户提供一份精准、深刻且聚焦于商业价值的分析洞察。请以该专家的视角进行思考和表达。\n\n#### 2. 任务目标 (Goal)\n\n根据下方提供的 “用户搜索意图”、“搜索关键词” 和 “Reddit 搜索结果”，生成一份包含两大核心模块的分析报告：“主题内容与相关性” 和 “行业聚焦与细分机会”。报告必须结构清晰、逻辑严谨，并严格遵循指定的输出格式。\n\n#### 3. 输入数据 (Input Data)\n\n* 用户的搜索意图:\n    ```\n    {{ $('设置搜索词与id').item.json.target }}\n    ```\n\n* 搜索关键词:\n    ```\n    {{ $('设置搜索词与id').item.json.search_keyword }}\n    ```\n\n* Reddit 搜索结果 (帖子标题与内容):\n    ```\n {{ $json.properties.page.title[0].text.content }}\n\n   {{ $json.properties.url.rich_text[0].text.content }}\n    ```\n\n---\n\n#### 4. 输出要求：严格遵循以下 Markdown 格式 (Output Format)\n\n### Reddit 搜索结果商业价值分析报告\n\n1. 主题内容与相关性\n\n* 核心议题总结: (在此处以列表形式，总结帖子中反复出现的 1-3 个核心议题、问题或观点。)\n    * 议题一: * 议题二: * ...\n* 相关性评估: (在此处明确评估这些议题与“用户搜索意图”的关联程度，请选择：高 / 中 / 低 / 不相关，并简要解释你的判断理由。)\n\n2. 行业聚焦与细分机会\n\n*   2.1 潜在细分行业/领域:\n    *   根据帖子内容，识别出该讨论最可能归属或关联的 1-2 个细分行业或特定市场领域。\n    *   示例：\n        *   细分行业1: [例如：独立游戏开发、SaaS客户支持工具、可持续时尚电商]\n\n*   2.2 用户痛点洞察:\n    *   从帖子中用户（发帖人或评论者）的讨论、抱怨、提问或分享的经验中，识别出 1-3 个明确的用户痛点或未被满足的需求。\n    *   要求：痛点描述需具体，能反映用户的真实困境。\n    *   示例：\n        *   痛点1: [例如：缺乏针对小型企业的廉价项目管理工具]\n        *   痛点2: [例如：现有AI写作助手生成的中文内容不够自然]\n\n*   2.3 潜在商业机会挖掘:\n    *   基于上述核心议题和用户痛点，思考并提出 1-2 个具有潜力的商业机会、产品概念或服务方向。\n    *   要求：商业机会应具有一定的创新性和可行性，并说明其如何解决用户痛点或满足需求。\n    *   示例：\n        *   商业机会1: [例如：开发一款集成AI的、专为中文内容创作者设计的语法和风格优化插件，以解决AI写作不自然的问题。]\n        *   商业机会2: [例如：推出一个专注于可持续材料的B2B时尚采购平台，连接设计师与环保面料供应商。]\n\n---\n\n#### 5. 关键指令与限制 (Critical Instructions & Constraints)\n* 聚焦商业: 分析的最终目的是挖掘商业价值，请确保“商业机会”部分具体、有启发性，而不仅仅是重复问题。\n* 专注当前帖子： 你的所有分析都必须严格基于当前提供的“Reddit帖子标题”和“Reddit帖子内容”。不要引入外部知识或对其他帖子的假设，除非帖子内容明确引用，杜绝主观臆测。\n* 客观中立： 保持分析的客观性和中立性，避免主观臆断。\n* 深度优先： 相比宽泛的概述，更注重对单一帖子价值的深度挖掘。\n* 精炼表达： 使用精炼的商业语言，直击要点。语言力求精准、专业、言简意赅。\n* 信息不足处理： 如果帖子内容过于简短或信息不足，导致无法有效完成某项分析（如“商业机会挖掘”），请在该项下明确指出“信息不足，无法进行有效分析”，并简要说明原因。\n* 严格遵守格式： 必须完全遵循上述Markdown输出格式，包括标题层级、编号和加粗等。\n* 如果帖子内容为空或无关： 若“Reddit帖子内容”为空、乱码或与“帖子标题”、“搜索关键词”及“用户搜索意图”完全不相关（例如广告、spam），则在报告开头注明“当前帖子内容无效或不相关，无法进行分析”，然后终止后续分析。",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2864,
+        464
+      ],
+      "id": "f4c30339-e899-4566-818b-37922c109832",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=从以下内容中分析出用户的搜索意图，以及1个搜索关键词\n```\n{{ $json.target }}\n```\n以json格式返回：\n```\n{\n\"target\":\"用户的搜索意图描述，控制在50到100字，尽可能还原用户的原话\",\n\"keyword\":\"1-3个单词组成的简短英文搜索关键词，只能有一个\",\n\"subreddit\":\"适合用户搜索意图的 subreddit 版面名称，只能有一个\"\n}\n```",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        448
+      ],
+      "id": "fdf4f7c6-f6c6-45b1-890d-9050525ddbe5",
+      "name": "搜索意图识别"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"target\":\"用户的搜索意图描述，控制在50到100字，尽可能还原用户的原话\",\n\"keyword\":\"搜索关键词，只能有一个\",\n\"subreddit\":\"适合的subreddit 版面，只能有一个\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1568,
+        672
+      ],
+      "id": "5c25262b-7121-4b95-98c0-2af086212242",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:add",
+        "app_toke": "BEPhblqGJajgfTsIRC5cFCmFnGd",
+        "table_id": "tbluogAPN8Uwsj3l",
+        "body": "={\"fields\":{\"搜索关键词\":\"{{ $('设置搜索词与id').item.json.search_keyword }}\",\"搜索意图\":\"{{ $('设置搜索词与id').item.json.target }}\",\"搜索id\":{{ $('设置搜索词与id').item.json.index }},\"分析结论\":{{ $json.output.toJsonString() }}\n}} "
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        3504,
+        160
+      ],
+      "id": "50dd9b80-d1e8-4626-972e-e4c3764858af",
+      "name": "新建搜索记录",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "iAw57HeFBCJn3KDM",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6e0a8a4e-b95f-455a-9b95-f64c00eb307f",
+              "name": "index",
+              "value": "={{ $now.toMillis()}}",
+              "type": "number"
+            },
+            {
+              "id": "cdb73a8d-9de4-46f9-aede-a9e6da450e52",
+              "name": "search_keyword",
+              "value": "zoom setup",
+              "type": "string"
+            },
+            {
+              "id": "3fc69fd3-7eab-40b8-bd0c-aa0f5133e25d",
+              "name": "target",
+              "value": "拉取 zoom 应用相关评论，从中启发新的 onboarding 需求",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1184,
+        448
+      ],
+      "id": "1d55302f-ef0a-4c86-8094-c785f89d12b9",
+      "name": "设置搜索词与id"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2480,
+        448
+      ],
+      "id": "afba1cf4-bcec-4fd7-ad01-7ab1fc1ad79b",
+      "name": "Loop Over Items",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        3728,
+        576
+      ],
+      "id": "92a819f9-4852-4596-acf7-7aee2bb48ff5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=以下内容是之前对用户在reddit上搜索结果的分析，请你根据用户的搜索意图，对所有分析结果做一个总结，形成一个markdown分析报告\n\n\n\n\n# Reddit搜索结果汇总分析报告\n\n## 角色设定\n你是一位资深的市场洞察与战略分析专家，擅长从海量的零散信息中整合、提炼核心洞察，并为商业决策提供战略性建议。你现在需要处理的是针对同一用户搜索意图下的多份独立Reddit帖子分析报告。\n\n## 核心任务\n整合并提炼来自多个独立Reddit帖子分析报告的核心洞察，形成一份全面的汇总分析报告。这份报告应揭示跨帖子的共性趋势、突出的用户痛点、以及最具潜力的商业机会，并最终为用户提供战略层面的建议。\n\n## 输入数据\n1.  用户原始搜索意图 (User Original Search Intent): `{{ $('设置搜索词与id').item.json.target }}`\n2.  用户原始搜索关键词 (User Original Search Keywords): `{{ $('设置搜索词与id').item.json.search_keyword }}`\n3.  多个独立帖子分析结果 (Collection of Individual Post Analyses):\n```\n{{ $json.data.toJsonString() }}\n```\n\n\n## 汇总分析报告框架与输出要求\n请严格按照以下Markdown格式和内容要求，生成你的汇总分析报告：\n\n### 基于用户搜索意图：“{{ $('设置搜索词与id').item.json.target }}” (关键词：“{{ $('设置搜索词与id').item.json.search_keyword }}”)\n\n#### 1. 整体趋势与核心议题洞察\n\n*   1.1 跨帖子核心议题聚合:\n    *   识别并总结在多个帖子分析中反复出现或最为突出的 1-3 个核心议题、普遍性问题或共同关注点。\n    *   对每个聚合议题进行简要描述，并说明其在所分析帖子中的普遍性或重要性。\n    *   示例：\n        *   聚合议题1: [例如：对现有解决方案不满意的普遍情绪] - 在X, Y, Z帖子中均有体现。\n        *   聚合议题2: [例如：对特定功能/特性需求的强烈呼声] - 在A, B帖子中被重点讨论。\n\n*   1.2 整体内容与用户搜索意图的吻合度:\n    *   综合评估所有分析过的帖子内容，它们在多大程度上整体反映或满足了用户的原始搜索意图 ？\n    *   是高度吻合、部分吻合还是存在较大偏差？请阐述理由。\n\n#### 2. 聚合行业洞察与商业潜力评估\n\n*   2.1 主导细分行业/领域识别:\n    *   基于所有独立分析，识别在这些讨论中被共同提及或最常指向的 1-2 个主要细分行业或市场领域。\n    *   示例：\n        *   主导细分行业1: [例如：AI内容生成工具]\n        *   主导细分行业2: [例如：小型企业项目管理软件]\n\n*   2.2 关键用户痛点总结 (Top Pain Points):\n    *   从所有独立分析的用户痛点中，提炼并总结出出现频率最高、用户反映最强烈或最具代表性的 1-3 个关键用户痛点。\n    *   对每个关键痛点进行清晰描述，并说明其普遍性。\n    *   示例：\n        *   关键痛点1: [例如：当前工具学习曲线陡峭，上手困难] - 在多个帖子中被不同用户反复提及。\n        *   关键痛点2: [例如：缺乏针对特定小众需求的定制化功能] - 虽提及次数不多，但用户表达的需求非常迫切。\n\n*   2.3 综合商业机会研判 (Synthesized Commercial Opportunities):\n    *   基于所有帖子的分析，综合评估并筛选出最具潜力、协同效应最强或被多次间接提及/支持的 1-2 个商业机会。\n    *   对于每个机会：\n        *   清晰描述该商业机会。\n        *   解释它如何能解决已识别的关键用户痛点或满足聚合的核心议题。\n        *   简要评估其潜在市场吸引力或可行性。\n    *   示例：\n        *   综合机会1: [例如：开发一款“即插即用”型、预设模板丰富的项目管理SaaS，专为技术背景较弱的小微企业主设计，直接解决上手难的痛点。] - 市场需求明确，竞争对手在该细分定位上较弱。\n\n#### 3. 整体讨论氛围与用户情绪 (Optional, if discernible)\n\n*   简要描述在这些相关帖子讨论中观察到的整体用户情绪或讨论氛围（例如：积极寻求解决方案、普遍感到沮丧、对新技术充满好奇、分享成功经验等）。如果信息不足或情绪多样难以概括，请注明。\n\n#### 4. 综合结论与战略建议\n\n*   4.1 核心洞察总结:\n    *   用 2-3句话 高度概括本次Reddit搜索结果分析的核心发现。\n\n*   4.2 战略行动建议:\n    *   基于以上所有分析，为用户提供 2-3 条具体的、可行动的战略建议或下一步骤。\n    *   建议应直接关联用户的搜索意图，并结合所发现的商业机会和用户痛点。\n    *   示例：\n        *   建议1: [例如：针对“AI内容生成工具”领域，重点调研“解决中文本地化与自然度”这一痛点的解决方案，因为这是多个帖子中反映的强烈需求。]\n        *   建议2: [例如：考虑发起一项更深入的用户调研，验证“即插即用型项目管理SaaS”的市场接受度，特别是针对那些在Reddit上抱怨现有工具复杂性的用户群体。]\n\n#### 5. 报告局限性\n\n*   请指出本汇总报告的潜在局限性（例如：分析基于有限的Reddit帖子样本，可能无法代表全部用户观点；情绪判断具有主观性等）。\n\n---\n\n## 重要指令与限制：\n1.  整合与提炼: 核心在于从多个独立分析中找出共性、趋势和最重要的洞察，避免简单罗列各个独立分析的结果。\n2.  数据驱动: 所有汇总结论都应明确基于输入的“多个独立帖子分析结果”集合。\n3.  突出重点: 优先呈现那些在多个分析中反复出现、或被认为是特别重要的信息。\n4.  避免重复: 如果多个帖子指向完全相同的痛点或机会，请在汇总时整合描述，无需每个都作为独立点列出，但可以说明其来源广泛。\n5.  处理冲突信息（如果存在）: 如果不同帖子分析之间存在明显矛盾的观点，请尝试在报告中提及这种差异性，或者选择性地突出更主流或证据更充分的观点。\n6.  战略高度: 最终的建议应具有一定的战略指导意义，而不仅仅是操作层面的小技巧。\n7.  严格遵守格式: 必须完全遵循上述Markdown输出格式。",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        48
+      ],
+      "id": "d1926f62-7bb3-4430-96fb-b947ffa98b3f",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "deepseek-chat",
+          "mode": "list",
+          "cachedResultName": "deepseek-chat"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3200,
+        272
+      ],
+      "id": "b38e476c-290e-4b8e-b0cf-65547be934ee",
+      "name": "DeepSeek",
+      "credentials": {
+        "openAiApi": {
+          "id": "XA4x6NehB31o7nce",
+          "name": "OpenAi DeepSeek"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "deepseek-chat",
+          "mode": "list",
+          "cachedResultName": "deepseek-chat"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2800,
+        672
+      ],
+      "id": "f39c3e49-0cbc-4954-abf4-405ce9e1c147",
+      "name": "DeepSeek1",
+      "credentials": {
+        "openAiApi": {
+          "id": "XA4x6NehB31o7nce",
+          "name": "OpenAi DeepSeek"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        160
+      ],
+      "id": "8eed4dbc-5e54-47ee-b740-f8400d42dd7d",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "subreddit": "zoom",
+        "keyword": "={{ $json.output.keyword }}",
+        "limit": 10,
+        "additionalFields": {
+          "sort": "relevance"
+        }
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        448
+      ],
+      "id": "3f003d1f-381c-4724-a80c-55915c4d20d6",
+      "name": "Search for a post",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "IRUR5bGFaOCSxg4y",
+          "name": "Reddit account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "qwen-turbo",
+          "mode": "list",
+          "cachedResultName": "qwen-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1376,
+        656
+      ],
+      "id": "07526df0-3f20-4ea4-bb5b-ba99a0e14e3e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JUSx3ZXiV5VE90VB",
+          "name": "OpenAi QWEN"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "24015238-b999-8019-8958-e1315a0036e7",
+          "mode": "list",
+          "cachedResultName": "zoom-reddit-onboarding-threads",
+          "cachedResultUrl": "https://www.notion.so/24015238b99980198958e1315a0036e7"
+        },
+        "title": "={{ $json.title }}",
+        "simple": false,
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "url|rich_text",
+              "textContent": "={{ $json.url }}"
+            },
+            {
+              "key": "date|rich_text",
+              "textContent": "={{ DateTime.fromSeconds($json.created_utc).toISO() }}"
+            },
+            {
+              "key": "thread_id|rich_text",
+              "textContent": "={{ $json.id }}"
+            },
+            {
+              "key": "subreddit|rich_text",
+              "textContent": "={{ $json.subreddit_name_prefixed }}"
+            },
+            {
+              "key": "id|number",
+              "numberValue": "={{ $('设置搜索词与id').item.json.index }}"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $json.selftext.slice(0,1950) }}",
+                    "annotationUi": {}
+                  },
+                  {
+                    "text": "={{ $json.selftext.slice(1950,3900) }}",
+                    "annotationUi": {}
+                  },
+                  {
+                    "text": "={{ $json.selftext.slice(3900) }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        464
+      ],
+      "id": "5b5ec327-6f8a-4e06-9ba0-082335ccafb1",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "0Flv8Xh6wLpK7SnY",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.url }}",
+          "mode": "url",
+          "__regex": "(?:https|http)://www\\.notion\\.so/(?:[a-z0-9-]{2,}/)?(?:[a-zA-Z0-9-]{1,}-)?([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})"
+        },
+        "simple": false,
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "AI summary"
+            },
+            {
+              "key": "="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        3504,
+        464
+      ],
+      "id": "7e99fc9e-710d-4810-8ee1-cccd550d586d",
+      "name": "Update a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "0Flv8Xh6wLpK7SnY",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "设置搜索词与id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "搜索意图识别": {
+      "main": [
+        [
+          {
+            "node": "Search for a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "搜索意图识别",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新建搜索记录": {
+      "main": [
+        []
+      ]
+    },
+    "设置搜索词与id": {
+      "main": [
+        [
+          {
+            "node": "搜索意图识别",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Update a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "新建搜索记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search for a post": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "搜索意图识别",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a database page": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "9027610d-03d8-497d-9143-90ec5cdbbcf8",
+  "triggerCount": 0,
+  "tags": []
+}
