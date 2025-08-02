@@ -1,0 +1,617 @@
+{
+  "createdAt": "2025-07-31T08:43:15.690Z",
+  "updatedAt": "2025-08-01T02:59:39.000Z",
+  "id": "QgNbYYFIP5pmSjX1",
+  "name": "Zoom-review",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        176
+      ],
+      "id": "71418f50-cd67-4058-93ba-fbf2d1ec0472",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.google_sheet_url }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.google_sheet_url }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -144,
+        176
+      ],
+      "id": "d0a1600a-9088-40b0-ae05-f88b771ee818",
+      "name": "Zoom Reviews",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VXAlxkWiOANdzJaF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        304,
+        176
+      ],
+      "id": "34da2b90-1eab-45cd-92fe-32b44359e897",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d0de5445-e815-4134-ab86-4f77496b1dfd",
+              "leftValue": "={{ $json['评级'] }}",
+              "rightValue": 4,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            },
+            {
+              "id": "ecb187b4-5c2c-4a2f-8362-e029e6969847",
+              "leftValue": "={{ $json['内容'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "23a9a206-5122-4975-9f27-a7bc7cb332ef",
+              "leftValue": "={{ $json['内容'] }}",
+              "rightValue": "该条评论已经被删除",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        176
+      ],
+      "id": "6aaabaf9-6b82-4d50-8931-59639d907c8e",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert Product Manager, highly skilled in analyzing customer feedback, identifying user needs, and transforming insights into actionable product improvements.  \nYour task is to:  \nAnalyze the provided customer feedback and categorize it based on different application functions.  \nFilter out non-constructive or purely hostile remarks while focusing on meaningful insights.  \nSummarize key pain points within each category, ensuring clarity and relevance.  \nPropose specific improvements to address each pain point and enhance the user experience.  \nStructure your output using the following format:  \nCategory: [Application Function]  \nKey Pain Points: [Summarized customer frustrations or issues]  \nImprovement: [Clear, actionable suggestions to resolve the issue]  \nExample:  \nCategory: Authentication  \nKey Pain Points: Users frequently experience login failures due to forgotten passwords.  \nImprovement: Implement a more intuitive \"Forgot Password\" flow with real-time hints and alternative authentication options.  \nEnsure that your analysis is concise, insightful, and actionable to drive meaningful product enhancements.\n\nPlease note that when categorizing issues and proposing optimization suggestions, each item should be followed by the corresponding user comment number such as row_number for easy location.\n\nNote that the final text is written to google doc, Do not use too much markdown syntax, instead use Google Doc's syntax.\n\nBelow are the user reviews that need to be analyzed.\n{{JSON.stringify($json.data) }}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        176
+      ],
+      "id": "64c34c3c-5433-418f-850c-ca0072b40082",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "deepseek-reasoner",
+          "mode": "list",
+          "cachedResultName": "deepseek-reasoner"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        368
+      ],
+      "id": "8c03ae77-d3a6-437a-b6dc-5961b6e3b322",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XA4x6NehB31o7nce",
+          "name": "OpenAi DeepSeek"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "default",
+        "title": "={{ $now.format('yyyy/MM/dd HH:mm:ss') }} - Zoom App Store review summary"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        48
+      ],
+      "id": "b72412b3-5cd7-455c-93df-555abc28a668",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "OA4Ji1Nlqv5HAIXs",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "=App store data source :\n\n{{ $('Edit Fields').item.json.google_sheet_url }}\n\n\n{{ $('AI Agent').item.json.output }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        48
+      ],
+      "id": "8fc8f266-8bb9-4772-86b5-5765f3ee702e",
+      "name": "Update a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "OA4Ji1Nlqv5HAIXs",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.documentId }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "commenter",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1776,
+        48
+      ],
+      "id": "a03a78a1-84f2-451c-a673-013c7d520322",
+      "name": "Share file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rgGlS5cKzd9uR0W1",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"google_sheet_url\": \"https://docs.google.com/spreadsheets/d/1tiBAVoFrT_R5TtPJJ-DXlT00PC8NQL7xP3ctQmD1Rj8/edit?gid=838036886#gid=838036886\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        176
+      ],
+      "id": "ecf3d3b8-aa76-46d5-90b8-a21ca2455a15",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://integrations.zoom.us/chat/webhooks/incomingwebhook/1FsPm1IPSQ-CuI-rgokRKA?format=fields",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=Zoom App Store review summary {{ $now.format('yyyy-MM-dd') }}",
+              "value": "=The following is a summary of reviews for Zoom Workplace in the App Store over the past period of time. \nhttps://docs.google.com/document/d/{{$('Create a document').item.json.id }}\n\n中文版本\nhttps://docs.google.com/document/d/{{$('Translate document').item.json.id }}\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2240,
+        128
+      ],
+      "id": "3a52f67b-cd76-4a04-9a9b-95e6f29430fb",
+      "name": "HTTP Request",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "0CISyYzvo82eYmkP",
+          "name": "Bearer Auth account test n8n init"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "qwen-turbo",
+          "mode": "list",
+          "cachedResultName": "qwen-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        528
+      ],
+      "id": "7207a791-878e-4cbf-9a5c-f8aaa3f0586e",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "JUSx3ZXiV5VE90VB",
+          "name": "OpenAi QWEN"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.documentId }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "commenter",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1776,
+        304
+      ],
+      "id": "a9c52c01-1cda-46f0-996c-4d1eb8464e01",
+      "name": "Share file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rgGlS5cKzd9uR0W1",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "=App store data source :\n\n{{ $('Edit Fields').item.json.google_sheet_url }}\n\n{{ $('AI Agent Translate CN').item.json.output }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        304
+      ],
+      "id": "1e508015-24c7-4b97-b4df-09e891009906",
+      "name": "Update a document CN",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "OA4Ji1Nlqv5HAIXs",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=把下面这段翻译成中文，注意专有名词不用翻译\n{{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        928,
+        304
+      ],
+      "id": "a5533d01-4b31-48f5-aa1b-460dcb7c80d7",
+      "name": "AI Agent Translate CN"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2016,
+        144
+      ],
+      "id": "facd31c9-bebc-47fb-aee8-fced5039b661",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "folderId": "default",
+        "title": "={{ $now.format('yyyy/MM/dd HH:mm:ss') }} - 中文 Zoom App Store review summary"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        304
+      ],
+      "id": "f2956314-8130-4028-97a4-31b8df4d4f12",
+      "name": "Translate document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "OA4Ji1Nlqv5HAIXs",
+          "name": "Google Docs account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zoom Reviews": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Agent Translate CN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document": {
+      "main": [
+        [
+          {
+            "node": "Share file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Zoom Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Translate CN",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Update a document CN": {
+      "main": [
+        [
+          {
+            "node": "Share file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Translate CN": {
+      "main": [
+        [
+          {
+            "node": "Translate document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translate document": {
+      "main": [
+        [
+          {
+            "node": "Update a document CN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "ed5d061a-a96c-48bc-9b38-69ddf9e8f7ae",
+  "triggerCount": 0,
+  "tags": []
+}
