@@ -1,0 +1,117 @@
+{
+  "createdAt": "2025-07-28T10:02:33.798Z",
+  "updatedAt": "2025-07-30T09:36:38.000Z",
+  "id": "xJoVMgvhctrGNyw1",
+  "name": "playground-1",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ee32fd47-b4fc-42e6-93e8-7c4d05c0e40b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:add",
+        "app_toke": "Gcp3bEziVaN4qYs1xOqc14IKnud",
+        "table_id": "tbl3y2NO4BgBaiTK",
+        "user_id_type": "user_id",
+        "body": "{\n  \"fields\": {\n    \"文本\": \"拜访潜在客户123\"\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        768,
+        0
+      ],
+      "id": "85c799f2-387f-4c19-a8df-93ca099da847",
+      "name": "Bitable:table:record:add bitable",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "iAw57HeFBCJn3KDM",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "24015238-b999-80cf-80ab-f387a15a0735",
+          "mode": "list",
+          "cachedResultName": "reddit-n8n-1",
+          "cachedResultUrl": "https://www.notion.so/24015238b99980cf80abf387a15a0735"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "test0|title",
+              "title": "testfawe"
+            },
+            {
+              "key": "test1|rich_text",
+              "textContent": "testste"
+            },
+            {
+              "key": "test2|rich_text",
+              "textContent": "testsetse"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        464,
+        224
+      ],
+      "id": "9f41b815-fb52-429c-8bf8-39ab546ff52a",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "0Flv8Xh6wLpK7SnY",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Bitable:table:record:add bitable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "f63c9879-5add-4d6d-b33d-abc094787057",
+  "triggerCount": 0,
+  "tags": []
+}
