@@ -1,0 +1,700 @@
+{
+  "createdAt": "2025-07-27T15:28:55.129Z",
+  "updatedAt": "2025-07-30T07:49:36.000Z",
+  "id": "YnMtksoRGzajtgjT",
+  "name": "Reddit-origin",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        -224
+      ],
+      "id": "fd09f5f6-e3aa-4029-a49f-649a0330d929",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "subreddit": "smallbusiness",
+        "keyword": "={{ $json.search_keyword }}",
+        "limit": 10,
+        "additionalFields": {
+          "sort": "relevance"
+        }
+      },
+      "type": "n8n-nodes-base.reddit",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        -224
+      ],
+      "id": "d55940b6-33d5-44a9-b40f-4b2a8e2401d8",
+      "name": "Reddit",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "IRUR5bGFaOCSxg4y",
+          "name": "Reddit account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7ab94aa0-86e6-422b-9c3c-58e14f256f0f",
+              "leftValue": "={{ $('Reddit').item.json.ups }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "2742a905-1b2c-45d0-ac8c-551d52f8e61f",
+              "leftValue": "={{ $('Reddit').item.json.selftext }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "32195ba3-db7c-4ff6-90ee-b4e1b6d95ff9",
+              "leftValue": "={{ DateTime.fromSeconds($('Reddit').item.json.created_utc).toISO() }}",
+              "rightValue": "={{ $today.minus({days: 365}).toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "afterOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        3280,
+        144
+      ],
+      "id": "36660c0d-201e-42cc-8993-6793b8400ad8",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### Reddit搜索结果深度分析与商业洞察\n\n#### 1. 角色扮演 (Role) & 任务背景 (Context)\n\n您将扮演一名专业的 “Reddit 商业机会分析师”。您的任务是基于给定的 Reddit 搜索数据，为用户提供一份精准、深刻且聚焦于商业价值的分析洞察。请以该专家的视角进行思考和表达。\n\n#### 2. 任务目标 (Goal)\n\n根据下方提供的 “用户搜索意图”、“搜索关键词” 和 “Reddit 搜索结果”，生成一份包含两大核心模块的分析报告：“主题内容与相关性” 和 “行业聚焦与细分机会”。报告必须结构清晰、逻辑严谨，并严格遵循指定的输出格式。\n\n#### 3. 输入数据 (Input Data)\n\n* 用户的搜索意图:\n    ```\n    {{ $('设置搜索词与id').item.json.target }}\n    ```\n\n* 搜索关键词:\n    ```\n    {{ $('设置搜索词与id').item.json.search_keyword }}\n    ```\n\n* Reddit 搜索结果 (帖子标题与内容):\n    ```\n    {{ $('Loop Over Items').item.json.data.record.fields['帖子标题'] }}\n\n    {{ $('Loop Over Items').item.json.data.record.fields['帖子内容'] }}\n    ```\n\n---\n\n#### 4. 输出要求：严格遵循以下 Markdown 格式 (Output Format)\n\n### Reddit 搜索结果商业价值分析报告\n\n1. 主题内容与相关性\n\n* 核心议题总结: (在此处以列表形式，总结帖子中反复出现的 1-3 个核心议题、问题或观点。)\n    * 议题一: * 议题二: * ...\n* 相关性评估: (在此处明确评估这些议题与“用户搜索意图”的关联程度，请选择：高 / 中 / 低 / 不相关，并简要解释你的判断理由。)\n\n2. 行业聚焦与细分机会\n\n*   2.1 潜在细分行业/领域:\n    *   根据帖子内容，识别出该讨论最可能归属或关联的 1-2 个细分行业或特定市场领域。\n    *   示例：\n        *   细分行业1: [例如：独立游戏开发、SaaS客户支持工具、可持续时尚电商]\n\n*   2.2 用户痛点洞察:\n    *   从帖子中用户（发帖人或评论者）的讨论、抱怨、提问或分享的经验中，识别出 1-3 个明确的用户痛点或未被满足的需求。\n    *   要求：痛点描述需具体，能反映用户的真实困境。\n    *   示例：\n        *   痛点1: [例如：缺乏针对小型企业的廉价项目管理工具]\n        *   痛点2: [例如：现有AI写作助手生成的中文内容不够自然]\n\n*   2.3 潜在商业机会挖掘:\n    *   基于上述核心议题和用户痛点，思考并提出 1-2 个具有潜力的商业机会、产品概念或服务方向。\n    *   要求：商业机会应具有一定的创新性和可行性，并说明其如何解决用户痛点或满足需求。\n    *   示例：\n        *   商业机会1: [例如：开发一款集成AI的、专为中文内容创作者设计的语法和风格优化插件，以解决AI写作不自然的问题。]\n        *   商业机会2: [例如：推出一个专注于可持续材料的B2B时尚采购平台，连接设计师与环保面料供应商。]\n\n---\n\n#### 5. 关键指令与限制 (Critical Instructions & Constraints)\n* 聚焦商业: 分析的最终目的是挖掘商业价值，请确保“商业机会”部分具体、有启发性，而不仅仅是重复问题。\n* 专注当前帖子： 你的所有分析都必须严格基于当前提供的“Reddit帖子标题”和“Reddit帖子内容”。不要引入外部知识或对其他帖子的假设，除非帖子内容明确引用，杜绝主观臆测。\n* 客观中立： 保持分析的客观性和中立性，避免主观臆断。\n* 深度优先： 相比宽泛的概述，更注重对单一帖子价值的深度挖掘。\n* 精炼表达： 使用精炼的商业语言，直击要点。语言力求精准、专业、言简意赅。\n* 信息不足处理： 如果帖子内容过于简短或信息不足，导致无法有效完成某项分析（如“商业机会挖掘”），请在该项下明确指出“信息不足，无法进行有效分析”，并简要说明原因。\n* 严格遵守格式： 必须完全遵循上述Markdown输出格式，包括标题层级、编号和加粗等。\n* 如果帖子内容为空或无关： 若“Reddit帖子内容”为空、乱码或与“帖子标题”、“搜索关键词”及“用户搜索意图”完全不相关（例如广告、spam），则在报告开头注明“当前帖子内容无效或不相关，无法进行分析”，然后终止后续分析。",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        160
+      ],
+      "id": "098b19f3-e262-45b4-ad0d-16392f02a5c0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        160
+      ],
+      "id": "eb871aeb-ae1c-4ba9-8779-5be88d9a19c8",
+      "name": "When chat message received",
+      "webhookId": "1f7a5f99-5f85-41ae-a54f-db63417cc946",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=从以下内容中分析出用户的搜索意图，以及1个搜索关键词\n```\n {{ $json.chatInput }}\n```\n以json格式返回：\n```\n{\n\"target\":\"用户的搜索意图描述，控制在50到100字，尽可能还原用户的原话\",\n\"keyword\":\"1-3个单词组成的简短英文搜索关键词，只能有一个\"\n}\n```",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        160
+      ],
+      "id": "a9959dbb-1911-48c8-9ad9-80a0beb66121",
+      "name": "搜索意图识别",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"target\":\"用户的搜索意图描述，控制在50到100字，尽可能还原用户的原话\",\n\"keyword\":\"搜索关键词，只能有一个\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        2464,
+        416
+      ],
+      "id": "091428b3-3f84-45c4-9d77-207edc935a7b",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "Qwen/Qwen3-235B-A22B",
+          "mode": "list",
+          "cachedResultName": "Qwen/Qwen3-235B-A22B"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        400
+      ],
+      "id": "7ea7483a-8966-4682-8db8-5db6fab39d8c",
+      "name": "qwen3",
+      "credentials": {
+        "openAiApi": {
+          "id": "qMLeFjopKBvs0sqF",
+          "name": "OpenAI siliconflow"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        4304,
+        -240
+      ],
+      "id": "86e87b67-143c-452d-bc03-d27d2a25cb6a",
+      "name": "新建搜索记录"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        3056,
+        144
+      ],
+      "id": "5002f715-c3e4-4153-8aaa-e54d6ee9c175",
+      "name": "保存搜索结果"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6e0a8a4e-b95f-455a-9b95-f64c00eb307f",
+              "name": "index",
+              "value": "={{ $now.toMillis()}}",
+              "type": "number"
+            },
+            {
+              "id": "cdb73a8d-9de4-46f9-aede-a9e6da450e52",
+              "name": "search_keyword",
+              "value": "ai images",
+              "type": "string"
+            },
+            {
+              "id": "3fc69fd3-7eab-40b8-bd0c-aa0f5133e25d",
+              "name": "target",
+              "value": "昨天，生财有术的老板发了一个超级标预示着ChatGPT4o带来的图像生成成本降低，能引发很大的商业价值，图片是原文    现在我想在reddit上搜索关于这方面的商业机会",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2400,
+        -224
+      ],
+      "id": "ed33a3ec-04c3-402d-b1f6-dd94cc50ef61",
+      "name": "设置搜索词与id"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3520,
+        144
+      ],
+      "id": "bda33008-9cc2-461c-8599-78d354593a51",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        4656,
+        368
+      ],
+      "id": "0a839208-1d56-47e1-8034-c16e9636ab16"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        4416,
+        160
+      ],
+      "id": "4bf89292-a213-46b7-a565-067e3dc8f65f",
+      "name": "更新记录"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=以下内容是之前对用户在reddit上搜索结果的分析，请你根据用户的搜索意图，对所有分析结果做一个总结，形成一个markdown分析报告\n\n\n\n\n# Reddit搜索结果汇总分析报告\n\n## 角色设定\n你是一位资深的市场洞察与战略分析专家，擅长从海量的零散信息中整合、提炼核心洞察，并为商业决策提供战略性建议。你现在需要处理的是针对同一用户搜索意图下的多份独立Reddit帖子分析报告。\n\n## 核心任务\n整合并提炼来自多个独立Reddit帖子分析报告的核心洞察，形成一份全面的汇总分析报告。这份报告应揭示跨帖子的共性趋势、突出的用户痛点、以及最具潜力的商业机会，并最终为用户提供战略层面的建议。\n\n## 输入数据\n1.  用户原始搜索意图 (User Original Search Intent): `{{ $('设置搜索词与id').item.json.target }}`\n2.  用户原始搜索关键词 (User Original Search Keywords): `{{ $('设置搜索词与id').item.json.search_keyword }}`\n3.  多个独立帖子分析结果 (Collection of Individual Post Analyses):\n```\n{{ $json.data.toJsonString() }}\n```\n\n\n## 汇总分析报告框架与输出要求\n请严格按照以下Markdown格式和内容要求，生成你的汇总分析报告：\n\n### 基于用户搜索意图：“{{ $('设置搜索词与id').item.json.target }}” (关键词：“{{ $('设置搜索词与id').item.json.search_keyword }}”)\n\n#### 1. 整体趋势与核心议题洞察\n\n*   1.1 跨帖子核心议题聚合:\n    *   识别并总结在多个帖子分析中反复出现或最为突出的 1-3 个核心议题、普遍性问题或共同关注点。\n    *   对每个聚合议题进行简要描述，并说明其在所分析帖子中的普遍性或重要性。\n    *   示例：\n        *   聚合议题1: [例如：对现有解决方案不满意的普遍情绪] - 在X, Y, Z帖子中均有体现。\n        *   聚合议题2: [例如：对特定功能/特性需求的强烈呼声] - 在A, B帖子中被重点讨论。\n\n*   1.2 整体内容与用户搜索意图的吻合度:\n    *   综合评估所有分析过的帖子内容，它们在多大程度上整体反映或满足了用户的原始搜索意图 ？\n    *   是高度吻合、部分吻合还是存在较大偏差？请阐述理由。\n\n#### 2. 聚合行业洞察与商业潜力评估\n\n*   2.1 主导细分行业/领域识别:\n    *   基于所有独立分析，识别在这些讨论中被共同提及或最常指向的 1-2 个主要细分行业或市场领域。\n    *   示例：\n        *   主导细分行业1: [例如：AI内容生成工具]\n        *   主导细分行业2: [例如：小型企业项目管理软件]\n\n*   2.2 关键用户痛点总结 (Top Pain Points):\n    *   从所有独立分析的用户痛点中，提炼并总结出出现频率最高、用户反映最强烈或最具代表性的 1-3 个关键用户痛点。\n    *   对每个关键痛点进行清晰描述，并说明其普遍性。\n    *   示例：\n        *   关键痛点1: [例如：当前工具学习曲线陡峭，上手困难] - 在多个帖子中被不同用户反复提及。\n        *   关键痛点2: [例如：缺乏针对特定小众需求的定制化功能] - 虽提及次数不多，但用户表达的需求非常迫切。\n\n*   2.3 综合商业机会研判 (Synthesized Commercial Opportunities):\n    *   基于所有帖子的分析，综合评估并筛选出最具潜力、协同效应最强或被多次间接提及/支持的 1-2 个商业机会。\n    *   对于每个机会：\n        *   清晰描述该商业机会。\n        *   解释它如何能解决已识别的关键用户痛点或满足聚合的核心议题。\n        *   简要评估其潜在市场吸引力或可行性。\n    *   示例：\n        *   综合机会1: [例如：开发一款“即插即用”型、预设模板丰富的项目管理SaaS，专为技术背景较弱的小微企业主设计，直接解决上手难的痛点。] - 市场需求明确，竞争对手在该细分定位上较弱。\n\n#### 3. 整体讨论氛围与用户情绪 (Optional, if discernible)\n\n*   简要描述在这些相关帖子讨论中观察到的整体用户情绪或讨论氛围（例如：积极寻求解决方案、普遍感到沮丧、对新技术充满好奇、分享成功经验等）。如果信息不足或情绪多样难以概括，请注明。\n\n#### 4. 综合结论与战略建议\n\n*   4.1 核心洞察总结:\n    *   用 2-3句话 高度概括本次Reddit搜索结果分析的核心发现。\n\n*   4.2 战略行动建议:\n    *   基于以上所有分析，为用户提供 2-3 条具体的、可行动的战略建议或下一步骤。\n    *   建议应直接关联用户的搜索意图，并结合所发现的商业机会和用户痛点。\n    *   示例：\n        *   建议1: [例如：针对“AI内容生成工具”领域，重点调研“解决中文本地化与自然度”这一痛点的解决方案，因为这是多个帖子中反映的强烈需求。]\n        *   建议2: [例如：考虑发起一项更深入的用户调研，验证“即插即用型项目管理SaaS”的市场接受度，特别是针对那些在Reddit上抱怨现有工具复杂性的用户群体。]\n\n#### 5. 报告局限性\n\n*   请指出本汇总报告的潜在局限性（例如：分析基于有限的Reddit帖子样本，可能无法代表全部用户观点；情绪判断具有主观性等）。\n\n---\n\n## 重要指令与限制：\n1.  整合与提炼: 核心在于从多个独立分析中找出共性、趋势和最重要的洞察，避免简单罗列各个独立分析的结果。\n2.  数据驱动: 所有汇总结论都应明确基于输入的“多个独立帖子分析结果”集合。\n3.  突出重点: 优先呈现那些在多个分析中反复出现、或被认为是特别重要的信息。\n4.  避免重复: 如果多个帖子指向完全相同的痛点或机会，请在汇总时整合描述，无需每个都作为独立点列出，但可以说明其来源广泛。\n5.  处理冲突信息（如果存在）: 如果不同帖子分析之间存在明显矛盾的观点，请尝试在报告中提及这种差异性，或者选择性地突出更主流或证据更充分的观点。\n6.  战略高度: 最终的建议应具有一定的战略指导意义，而不仅仅是操作层面的小技巧。\n7.  严格遵守格式: 必须完全遵循上述Markdown输出格式。",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        -240
+      ],
+      "id": "5f4e4496-49d5-4c7d-b8bd-0c4e78b75a03",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "content": "## 下一阶段：增加意图识别",
+        "height": 460,
+        "width": 1000,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        96
+      ],
+      "id": "c936dbb3-7f0d-4918-88a9-ccfb1f00f35a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 1. 根据关键词在Reddit搜索",
+        "height": 360,
+        "width": 1000
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        -320
+      ],
+      "id": "fb8eed30-b5e8-4813-97a6-3a0d8681f122",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 2. 保存搜索结果，并过滤出有效帖子，进行AI分析",
+        "height": 520,
+        "width": 1620,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2976,
+        64
+      ],
+      "id": "89528aa6-9719-46d2-93ba-14ac31c02a74",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## 3. 汇总所有分析，形成总结论",
+        "height": 360,
+        "width": 1000,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3600,
+        -320
+      ],
+      "id": "30efcbef-a33a-47e6-aa03-d07619152454",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "typeVersion": 2.1,
+      "position": [
+        3760,
+        160
+      ],
+      "id": "dc786089-514e-4e1d-9ca2-52122ab7ed7e",
+      "name": "Summarization Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "deepseek-ai/DeepSeek-R1",
+          "mode": "list",
+          "cachedResultName": "deepseek-ai/DeepSeek-R1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3904,
+        -80
+      ],
+      "id": "831a120a-9f66-4296-ad96-d5eac340bab9",
+      "name": "DeepSeek",
+      "credentials": {
+        "openAiApi": {
+          "id": "qMLeFjopKBvs0sqF",
+          "name": "OpenAI siliconflow"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "deepseek-ai/DeepSeek-R1",
+          "mode": "list",
+          "cachedResultName": "deepseek-ai/DeepSeek-R1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3728,
+        384
+      ],
+      "id": "6d30e3cc-b898-4531-8bb8-8423371a9007",
+      "name": "DeepSeek1",
+      "credentials": {
+        "openAiApi": {
+          "id": "qMLeFjopKBvs0sqF",
+          "name": "OpenAI siliconflow"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3744,
+        -240
+      ],
+      "id": "441821cd-400e-433f-9b34-9e7fdb961793",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        4688,
+        -240
+      ],
+      "id": "f0ed3f50-88c8-45ed-b41e-be0a7bb8683f",
+      "name": "Send Email",
+      "webhookId": "d75431a8-aba8-44a4-90c2-1e13ed4b4405"
+    },
+    {
+      "parameters": {
+        "content": "# 出海赚美金：用n8n搭建「Reddit商机搜索与洞察」 AI Agent自动化寻找蓝海市场，发现真实痛点\n\n## 原文链接：https://mp.weixin.qq.com/s/F5DGk7zZfSM1sk6hAimgvg\n## 作者：公众号 饼干哥哥AGI\n\n## 添加微信加入AI交流群：binggandata",
+        "height": 340,
+        "width": 940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -464
+      ],
+      "id": "9bd52929-15c5-4547-9e67-b5de04d732ad",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleChat",
+      "typeVersion": 1,
+      "position": [
+        467.20000000000016,
+        0
+      ],
+      "id": "3f53ded4-8123-4575-a907-c2e93343dc6a",
+      "name": "Create a message",
+      "webhookId": "04276fbb-7684-413c-b56a-7eccf2154ccb"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        0
+      ],
+      "id": "50ab7ed5-1e1d-41d2-b2ad-569ef9257df5",
+      "name": "Send email",
+      "webhookId": "dba7cf12-2c39-4c66-8f15-b9eec9e1f574",
+      "credentials": {
+        "smtp": {
+          "id": "sjiOnv8Fy1RwgZNx",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        987.6539534883728,
+        0
+      ],
+      "id": "5319502f-0a7f-4e55-ad8f-1dbf0ab75b44",
+      "name": "Send a text message",
+      "webhookId": "3aed6a43-435f-46e7-8aef-c55e2871d4fe"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "设置搜索词与id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "搜索意图识别",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "搜索意图识别": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "搜索意图识别",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "qwen3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "搜索意图识别",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "设置搜索词与id": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarization Chain": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a message": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "b2860fd2-5a3b-40a1-8e3e-6da17fc4f370",
+  "triggerCount": 0,
+  "tags": []
+}
