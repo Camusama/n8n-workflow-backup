@@ -1,0 +1,454 @@
+{
+  "createdAt": "2025-07-31T08:33:52.100Z",
+  "updatedAt": "2025-07-31T08:34:00.000Z",
+  "id": "JdRdcXpg0mYhb3jX",
+  "name": "My workflow",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "eba3293d-8b5f-4904-91d5-8deed411dabd",
+      "name": "Daily Data Collection",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://itunes.apple.com/rss/customerreviews/page=1/id=546505307/sortby=mostrecent/json",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "82746339-1bc0-48f5-862a-0f0d6bbe0d70",
+      "name": "Fetch App Store Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -96,
+        -96
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "api-success-check",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d6ab98d0-d0ce-4741-9c36-4bc1aafd0c1f",
+      "name": "API Success Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process iTunes API response and format for Google Sheets\nconst items = [];\n\nif ($input.all().length > 0 && $input.all()[0].json && $input.all()[0].json.feed && $input.all()[0].json.feed.entry) {\n  const reviews = $input.all()[0].json.feed.entry;\n  \n  for (const review of reviews) {\n    // Skip the first entry which is usually app info\n    if (review['im:rating']) {\n      const item = {\n        review_id: review.id.label || 'unknown',\n        review_date: review.updated ? new Date(review.updated.label).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],\n        rating: parseInt(review['im:rating'].label) || 0,\n        review_text: review.content ? review.content.label : '',\n        app_version: review['im:version'] ? review['im:version'].label : 'unknown',\n        country: 'US',\n        author: review.author ? review.author.name.label : 'anonymous',\n        created_at: new Date().toISOString(),\n        data_source: 'iTunes_API'\n      };\n      items.push(item);\n    }\n  }\n}\n\n// If no data from API, create placeholder for manual upload\nif (items.length === 0) {\n  items.push({\n    review_id: 'manual_upload_needed',\n    review_date: new Date().toISOString().split('T')[0],\n    rating: 0,\n    review_text: 'Please manually upload review data to Google Sheets',\n    app_version: 'unknown',\n    country: 'unknown',\n    author: 'system',\n    created_at: new Date().toISOString(),\n    data_source: 'Manual_Upload_Required'\n  });\n}\n\nreturn items;"
+      },
+      "id": "f21de7b6-1662-497c-a5c1-69fc033d1006",
+      "name": "Process API Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "raw_reviews",
+          "mode": "name"
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "id": "29859884-bd7f-4df2-95f0-956937ed692f",
+      "name": "Write to Raw Reviews Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.1,
+      "position": [
+        576,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Manual upload instruction node\nconst items = [];\n\nitems.push({\n  message: 'API failed. Please manually upload review data to Google Sheets.',\n  instruction: 'Upload CSV file with columns: review_id, review_date, rating, review_text, app_version, country, author',\n  sheet_url: 'https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0',\n  next_step: 'After upload, manually trigger the analysis workflow',\n  timestamp: new Date().toISOString()\n});\n\nreturn items;"
+      },
+      "id": "93ce357f-bc70-491f-919c-c80e10659812",
+      "name": "Manual Upload Instruction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -16
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1ac950c9-aa1b-403e-acc6-2309185cded4",
+      "name": "Manual Analysis Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "raw_reviews",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "a1c2ecd3-46c0-4b74-b8e6-81987d8ceff0",
+      "name": "Read Reviews from Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.1,
+      "position": [
+        -96,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter reviews that haven't been analyzed yet\nconst items = [];\nconst allData = $input.all();\n\n// Get all reviews from the sheet\nfor (const item of allData) {\n  if (item.json.review_text && \n      item.json.review_text !== 'review_text' && // Skip header\n      item.json.review_text !== 'Please manually upload review data to Google Sheets' &&\n      item.json.review_text.length > 10) { // Only process meaningful reviews\n    \n    items.push({\n      review_id: item.json.review_id,\n      review_date: item.json.review_date,\n      rating: parseInt(item.json.rating) || 0,\n      review_text: item.json.review_text,\n      app_version: item.json.app_version,\n      country: item.json.country,\n      author: item.json.author || 'anonymous',\n      data_source: item.json.data_source || 'unknown'\n    });\n  }\n}\n\nconsole.log(`Processing ${items.length} reviews for analysis`);\nreturn items;"
+      },
+      "id": "85e9eb40-f6c8-470a-9330-569b13998d5f",
+      "name": "Filter Reviews for Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3629c62a-accc-41be-afb1-3d6e90245ad7",
+      "name": "AI Review Analysis",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        208
+      ],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process AI analysis results and combine with original review data\nconst items = [];\nconst inputData = $input.all();\n\nfor (let i = 0; i < inputData.length; i++) {\n  const originalReview = inputData[i].json;\n  const aiResponse = inputData[i].json.message?.content || inputData[i].json.text || '';\n  \n  let aiAnalysis = {};\n  \n  try {\n    // Try to parse AI response as JSON\n    aiAnalysis = JSON.parse(aiResponse);\n  } catch (error) {\n    console.log('Failed to parse AI response:', aiResponse);\n    // Fallback analysis\n    aiAnalysis = {\n      sentiment: 'neutral',\n      pain_points: ['analysis_failed'],\n      category: 'general',\n      keywords: ['parsing_error'],\n      severity: 'low',\n      actionable_feedback: 'Manual review required',\n      onboarding_related: false,\n      user_type: 'unknown'\n    };\n  }\n  \n  // Combine original review data with AI analysis\n  const combinedData = {\n    review_id: originalReview.review_id,\n    review_date: originalReview.review_date,\n    rating: originalReview.rating,\n    review_text: originalReview.review_text,\n    app_version: originalReview.app_version,\n    country: originalReview.country,\n    author: originalReview.author,\n    data_source: originalReview.data_source,\n    sentiment: aiAnalysis.sentiment || 'neutral',\n    pain_points: JSON.stringify(aiAnalysis.pain_points || []),\n    category: aiAnalysis.category || 'general',\n    keywords: JSON.stringify(aiAnalysis.keywords || []),\n    severity: aiAnalysis.severity || 'low',\n    actionable_feedback: aiAnalysis.actionable_feedback || '',\n    onboarding_related: aiAnalysis.onboarding_related || false,\n    user_type: aiAnalysis.user_type || 'unknown',\n    analyzed_at: new Date().toISOString()\n  };\n  \n  items.push(combinedData);\n}\n\nreturn items;"
+      },
+      "id": "45e01c99-c351-4882-b8d2-cd86df2870be",
+      "name": "Process AI Analysis Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "analyzed_reviews",
+          "mode": "name"
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "id": "2a694476-805c-4122-b976-e61c8b5cf5a3",
+      "name": "Write Analysis to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.1,
+      "position": [
+        800,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "analyzed_reviews",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "1a0f2ba4-f4be-4bf0-8b26-13df188990dd",
+      "name": "Read Analysis Data for Report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.1,
+      "position": [
+        1024,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate comprehensive analysis summary\nconst allData = $input.all();\nconst validReviews = allData.filter(item => \n  item.json.review_text && \n  item.json.review_text !== 'review_text' &&\n  item.json.sentiment\n);\n\nconst totalReviews = validReviews.length;\nconst sentimentCounts = {\n  positive: 0,\n  negative: 0,\n  neutral: 0\n};\n\nconst ratingSum = validReviews.reduce((sum, item) => {\n  const sentiment = item.json.sentiment;\n  if (sentimentCounts.hasOwnProperty(sentiment)) {\n    sentimentCounts[sentiment]++;\n  }\n  return sum + (parseInt(item.json.rating) || 0);\n}, 0);\n\nconst avgRating = totalReviews > 0 ? (ratingSum / totalReviews).toFixed(2) : 0;\n\n// Extract and count pain points\nconst allPainPoints = {};\nconst onboardingIssues = [];\nconst criticalIssues = [];\n\nvalidReviews.forEach(item => {\n  try {\n    const painPoints = JSON.parse(item.json.pain_points || '[]');\n    painPoints.forEach(point => {\n      allPainPoints[point] = (allPainPoints[point] || 0) + 1;\n    });\n    \n    if (item.json.onboarding_related === 'true' || item.json.onboarding_related === true) {\n      onboardingIssues.push({\n        review_id: item.json.review_id,\n        feedback: item.json.actionable_feedback,\n        severity: item.json.severity\n      });\n    }\n    \n    if (item.json.severity === 'high') {\n      criticalIssues.push({\n        review_id: item.json.review_id,\n        feedback: item.json.actionable_feedback,\n        rating: item.json.rating\n      });\n    }\n  } catch (error) {\n    console.log('Error parsing pain points for review:', item.json.review_id);\n  }\n});\n\n// Sort pain points by frequency\nconst topPainPoints = Object.entries(allPainPoints)\n  .sort(([,a], [,b]) => b - a)\n  .slice(0, 10)\n  .map(([point, count]) => ({ point, count, percentage: ((count / totalReviews) * 100).toFixed(1) }));\n\nconst summary = {\n  analysis_date: new Date().toISOString().split('T')[0],\n  total_reviews: totalReviews,\n  average_rating: avgRating,\n  sentiment_distribution: {\n    positive: {\n      count: sentimentCounts.positive,\n      percentage: ((sentimentCounts.positive / totalReviews) * 100).toFixed(1)\n    },\n    negative: {\n      count: sentimentCounts.negative,\n      percentage: ((sentimentCounts.negative / totalReviews) * 100).toFixed(1)\n    },\n    neutral: {\n      count: sentimentCounts.neutral,\n      percentage: ((sentimentCounts.neutral / totalReviews) * 100).toFixed(1)\n    }\n  },\n  top_pain_points: topPainPoints,\n  onboarding_issues_count: onboardingIssues.length,\n  critical_issues_count: criticalIssues.length,\n  onboarding_issues: onboardingIssues.slice(0, 5),\n  critical_issues: criticalIssues.slice(0, 5),\n  sheet_reference: `=HYPERLINK(\"https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0\", \"View Raw Data\")`\n};\n\nreturn [summary];"
+      },
+      "id": "a60834ce-b656-480e-a4c7-d09cacdab47c",
+      "name": "Generate Analysis Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c297fc65-677a-4787-872d-d4a992432dd1",
+      "name": "Generate Report Content",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        208
+      ],
+      "credentials": {}
+    },
+    {
+      "parameters": {},
+      "id": "e7821477-7ed8-4ded-a06b-bef05b044fdf",
+      "name": "Create Google Doc Report",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        208
+      ],
+      "credentials": {}
+    },
+    {
+      "parameters": {},
+      "id": "f57f8f1d-404b-4f01-9954-3b952c0c3a88",
+      "name": "Update Doc with Analysis",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 1.1,
+      "position": [
+        1904,
+        208
+      ],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final workflow completion summary\nconst items = [];\n\nconst docUrl = $('Create Google Doc Report').item.json.alternateLink || 'Document created successfully';\nconst docId = $('Create Google Doc Report').item.json.documentId;\nconst totalReviews = $('Generate Analysis Summary').item.json.total_reviews;\nconst avgRating = $('Generate Analysis Summary').item.json.average_rating;\n\nconst completionSummary = {\n  workflow_status: 'completed',\n  completion_time: new Date().toISOString(),\n  reviews_processed: totalReviews,\n  average_rating: avgRating,\n  google_doc_url: docUrl,\n  google_doc_id: docId,\n  google_sheet_url: 'https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit',\n  next_steps: [\n    'Review the generated Google Doc report',\n    'Share findings with product team',\n    'Plan onboarding improvements based on insights',\n    'Schedule next analysis cycle'\n  ]\n};\n\nitems.push(completionSummary);\nreturn items;"
+      },
+      "id": "e7ba902d-0d1e-41fd-a1ea-a7f5003f5242",
+      "name": "Workflow Completion Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        208
+      ]
+    }
+  ],
+  "connections": {
+    "Daily Data Collection": {
+      "main": [
+        [
+          {
+            "node": "Fetch App Store Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch App Store Reviews": {
+      "main": [
+        [
+          {
+            "node": "API Success Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Success Check": {
+      "main": [
+        [
+          {
+            "node": "Process API Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manual Upload Instruction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process API Data": {
+      "main": [
+        [
+          {
+            "node": "Write to Raw Reviews Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write to Raw Reviews Sheet": {
+      "main": [
+        [
+          {
+            "node": "Read Reviews from Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Analysis Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Reviews from Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Reviews from Sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Reviews for Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process AI Analysis Results": {
+      "main": [
+        [
+          {
+            "node": "Write Analysis to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Analysis to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Read Analysis Data for Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Analysis Data for Report": {
+      "main": [
+        [
+          {
+            "node": "Generate Analysis Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "b9c80305-2605-48a1-b490-cff9c9d33275",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-07-31T08:33:35.211Z",
+      "updatedAt": "2025-07-31T08:33:35.211Z",
+      "id": "b3nQk7SQBaFfsBd6",
+      "name": "zoom-analysis"
+    }
+  ]
+}
